@@ -16,7 +16,8 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   bool isLoading = true;
-  String Country = 'Pakistan';
+  String Country = 'China';
+
   Map<String, dynamic> res = {};
 
   @override
@@ -27,7 +28,7 @@ class _HomeState extends State<Home> {
 
   void getData(country) async {
     isLoading = true;
-    final String url = 'https://covid-193.p.rapidapi.com/history';
+    final String url = 'https://covid-193.p.rapidapi.com/statistics';
     final Map<String, String> headers = {
       "X-RapidAPI-Key": "f45d8848eamshad6366977ca5fe3p1c8858jsnb2a47996e921",
       "X-RapidAPI-Host": "covid-193.p.rapidapi.com"
@@ -40,11 +41,15 @@ class _HomeState extends State<Home> {
 
     try {
       final response = await http.get(uri, headers: headers);
-      res = await json.decode(response.body);
+      res = await json.decode(response.body)['response'][0];
 
       if (res.isNotEmpty) {
         setState(() {
           isLoading = false;
+          analytics[0]['value'] = res['cases']['total'];
+          analytics[1]['value'] = res['cases']['recovered'];
+          analytics[2]['value'] = res['deaths']['total'];
+          analytics[3]['value'] = res['cases']['total'];
         });
       }
     } catch (e) {
@@ -55,23 +60,37 @@ class _HomeState extends State<Home> {
     }
   }
 
-  List<OrdinalData> ordinalDataList = [
-    OrdinalData(domain: 'Population', measure: 0, color: Colors.grey[300]),
-    OrdinalData(domain: 'Cases', measure: 0, color: Colors.lightBlue),
-    OrdinalData(domain: 'Deaths', measure: 0, color: Colors.red),
-  ];
-
   List<Map> analytics = [
     {"name": "Confirmed", "value": 0, "color": Colors.grey[500]},
     {"name": "Recovered", "value": 0, "color": Colors.lightBlue},
     {"name": "Deaths", "value": 0, "color": Colors.red},
-    {"name": "0 Cases", "value": 0, "color": Colors.black},
+    {"name": "Cases", "value": 0, "color": Colors.black},
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text(
+          'covid app',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_alt_outlined),
+            color: Colors.black,
+            onPressed: () {
+              getData(Country);
+            },
+          )
+        ],
+      ),
       drawer: Drawer(),
       body: isLoading
           ? Container(
@@ -88,7 +107,7 @@ class _HomeState extends State<Home> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Pakistan Case's",
+                    "${res['country']} Cases",
                     style: TextStyle(
                       color: Colors.grey[900],
                       fontSize: 35,
@@ -96,7 +115,7 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                   Text(
-                    "2024-05-01",
+                    res['day'],
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
@@ -110,7 +129,24 @@ class _HomeState extends State<Home> {
                     child: AspectRatio(
                       aspectRatio: 10 / 10,
                       child: DChartPieO(
-                        data: ordinalDataList,
+                        data: [
+                          OrdinalData(
+                              domain: 'Total',
+                              measure: res['cases']['total'],
+                              color: Colors.grey[500]),
+                          OrdinalData(
+                              domain: 'Recovered',
+                              measure: res['cases']['recovered'],
+                              color: Colors.lightBlue),
+                          OrdinalData(
+                              domain: 'Deaths',
+                              measure: res['deaths']['total'],
+                              color: Colors.red),
+                          OrdinalData(
+                              domain: 'Confirmed',
+                              measure: res['cases']['total'],
+                              color: Colors.black),
+                        ],
                         configRenderPie: const ConfigRenderPie(arcWidth: 50),
                       ),
                     ),
