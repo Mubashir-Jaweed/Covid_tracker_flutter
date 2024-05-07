@@ -16,13 +16,15 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   bool isLoading = true;
-  String Country = 'China';
+  String Country = 'Pakistan';
+  List Countries = [];
 
   Map<String, dynamic> res = {};
 
   @override
   void initState() {
     getData(Country);
+    getCountries();
     super.initState();
   }
 
@@ -60,6 +62,21 @@ class _HomeState extends State<Home> {
     }
   }
 
+  void getCountries() async {
+    final String url = 'https://covid-193.p.rapidapi.com/statistics';
+    final Map<String, String> headers = {
+      "X-RapidAPI-Key": "f45d8848eamshad6366977ca5fe3p1c8858jsnb2a47996e921",
+      "X-RapidAPI-Host": "covid-193.p.rapidapi.com"
+    };
+    Uri uri = Uri.parse(url);
+    try {
+      final response = await http.get(uri);
+      Countries = await json.decode(response.body)['response'][0];
+    } catch (e) {
+      print(e);
+    }
+  }
+
   List<Map> analytics = [
     {"name": "Confirmed", "value": 0, "color": Colors.grey[500]},
     {"name": "Recovered", "value": 0, "color": Colors.lightBlue},
@@ -72,7 +89,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'covid app',
+          'Covid 78.4',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -83,15 +100,45 @@ class _HomeState extends State<Home> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.filter_alt_outlined),
+            icon: Icon(Icons.refresh),
             color: Colors.black,
             onPressed: () {
-              getData(Country);
+              setState(() {
+                getData(Country);
+              });
             },
           )
         ],
       ),
-      drawer: Drawer(),
+      drawer: Drawer(
+        child: Container(
+          padding: EdgeInsets.all(30),
+          child: Expanded(
+            child: ListView.builder(
+              itemCount: Countries.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  padding: EdgeInsets.fromLTRB(0, 15, 0, 5),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.black12, // Choose your desired color
+                        width: 1.0, // Choose your desired width
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    Countries[index],
+                    style: TextStyle(
+                      fontSize: 25,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
       body: isLoading
           ? Container(
               child: Center(
